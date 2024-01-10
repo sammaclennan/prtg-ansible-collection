@@ -46,6 +46,9 @@ options:
     description:
       - Name/host of device (one of device_name or device_id required)
     required: false
+  device_host:
+    description:
+      - Host of device - only required if different from device_name
   clone_from:
     description:
       - ID of PRTG device to "clone" new device from
@@ -160,6 +163,7 @@ def main():
             prtg_url=dict(required=True),
             device_id=dict(required=False),
             device_name=dict(required=False),
+            device_host=dict(required=False),
             state=dict(default='present', choices=['present', 'absent']),
             enabled=dict(required=False, default=True, type='bool'),
             clone_from=dict(required=False),
@@ -239,7 +243,12 @@ def main():
                     module.fail_json(msg='Unable to find parent group of clone_from')
             
             # create the new device
-            create_resp, create_info = api_call(module, '/api/duplicateobject.htm', {'id':module.params['clone_from'], 'name':module.params['device_name'], 'host':module.params['device_name'], 'targetid':dest_group})            
+                    
+            if module.params['device_host']:
+                device_host = module.params['device_host']
+            else:
+                device_host = module.params['device_name']
+            create_resp, create_info = api_call(module, '/api/duplicateobject.htm', {'id':module.params['clone_from'], 'name':module.params['device_name'], 'host':device_host, 'targetid':dest_group})            
             if(validate_response(module, create_info) != 200):
                 module.fail_json(msg='API request failed')
             create_resp.close()
